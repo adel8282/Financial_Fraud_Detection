@@ -2,6 +2,8 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <chrono>
+
 using namespace std;
 
 struct Transaction {
@@ -54,28 +56,27 @@ void insert(Node*& head, Transaction t) {
 // Search by transaction type (linear search)
 void searchByTransactionType(Node* head, string type) {
     Node* current = head;
-    bool found = false;
+    int matchCount = 0;
 
     while (current != nullptr) {
-        // [DEBUG]
-        // cout << "[DEBUG] comparing: '" << current->data.transaction_type << "' with '" << type << "'" << endl;
-
         if (current->data.transaction_type == type) {
-            found = true;
-            cout << "\nTransaction Found:\n";
-            cout << "ID: " << current->data.id << "\n";
-            cout << "Amount: " << current->data.amount << "\n";
-            cout << "Location: " << current->data.location << "\n";
-            cout << "Is Fraud: " << (current->data.is_fraud ? "Yes" : "No") << "\n";
+            matchCount++;
+            // comment this block during test
+            // cout << "ID: " << current->data.id << "\n";
+            // cout << "Amount: " << current->data.amount << "\n";
+            // cout << "Location: " << current->data.location << "\n";
+            // cout << "Is Fraud: " << (current->data.is_fraud ? "Yes" : "No") << "\n";
+            // cout << "Transaction Type: " << current->data.transaction_type << "\n";
         }
-
         current = current->next;
     }
 
-    if (!found) {
-        cout << "\n No transactions found with type: " << type << endl;
-    }
+    if (matchCount == 0)
+        cout << "No transactions found with type: " << type << endl;
+    else
+        cout << matchCount << " transactions found with type: " << type << endl;
 }
+
 
 
 // Read CSV and insert into linked list
@@ -123,13 +124,22 @@ void readCSV(string filename, Node*& head) {
 }
 
 int main() {
-    Node* head = nullptr; // important!
+    Node* head = nullptr;
     readCSV("financial_fraud_detection_dataset.csv", head);
 
     string type;
     cout << "Enter transaction type to search: ";
     getline(cin >> ws, type);
 
+    //timer//
+    auto start = chrono::high_resolution_clock::now();
+
     searchByTransactionType(head, type);
 
+    //timer//
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> duration = end - start;
+
+    cout << "\nTime taken for search: " << duration.count() << " seconds" << endl;
 }
+
