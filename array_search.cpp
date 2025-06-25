@@ -2,6 +2,8 @@
 #include <fstream>
 #include <cstring>
 #include <cstdlib>
+#include <chrono>
+#include <sys/resource.h>
 
 using namespace std;
 
@@ -118,6 +120,9 @@ void searchByTransactionType(Transaction* transactions, int size, const char* ta
 }
 
 int main() {
+    using namespace std::chrono;
+    auto start = high_resolution_clock::now();
+
     Transaction* transactions = nullptr;
     int count = loadTransactions("financial_fraud_detection_dataset.csv", transactions);
     if (count == 0) return 1;
@@ -129,5 +134,27 @@ int main() {
     searchByTransactionType(transactions, count, searchType);
 
     delete[] transactions;
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(end - start);
+
+    struct rusage usage;
+    getrusage(RUSAGE_SELF, &usage);
+    long memory_kb = usage.ru_maxrss;
+#ifdef __APPLE__
+    memory_kb /= 1024;
+#endif
+    double memory_mb = memory_kb / 1024.0;
+    long space_bytes = memory_kb * 1024;
+
+    cout << "\n+--------------- PERFORMANCE METRICS ------------------\n";
+    cout << "| Operation         | Search Transactions             |\n";
+    cout << "|-------------------+----------------------------------\n";
+    cout << "| Execution Time    | " << duration.count() << " ms\n";
+    cout << "| Memory Usage      | " << memory_mb << " MB\n";
+    cout << "| Space Used        | " << space_bytes << " bytes\n";
+    cout << "+-----------------------------------------------------+\n";
+
+    cout << "Press ENTER to exit...";
+    cin.get();  // Wait for Enter key
     return 0;
 }
