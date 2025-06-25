@@ -8,11 +8,12 @@
 #include <stdexcept>
 #include <algorithm>
 #include <chrono>
+#include <iomanip> // for setw
 
 using namespace std;
-using namespace std::chrono; // for runtime measurement
+using namespace std::chrono;
 
-//Functionto remove unwanted whitespace from strings
+//Function to remove unwanted whitespace from strings
 string trim(const string& str) {
     size_t first = str.find_first_not_of(" \t\n\r");
     if (first == string::npos) return "";
@@ -68,7 +69,7 @@ public:
     bool isEmpty() const { return current_size == 0; }
 };
 
-// Merge sort functions
+// Mergesort function 
 void merge(DynamicArray<Transaction>& arr, int l, int mid, int r) {
     int n1 = mid - l + 1;
     int n2 = r - mid;
@@ -99,7 +100,7 @@ void mergesort(DynamicArray<Transaction>& arr, int l, int r) {
     }
 }
 
-// Normalize payment_channel values
+// Normalize the payment channel 
 string normalizeChannel(string channel) {
     transform(channel.begin(), channel.end(), channel.begin(), ::tolower);
     if (channel == "card") return "Card";
@@ -127,7 +128,7 @@ void displayTransactions(const string& title, DynamicArray<Transaction>& arr) {
     cout << "---------------------------------------------------------" << endl;
 }
 
-// Load data from CSV file
+// Loading data from CSV file
 void loadTransactions(const string& filename,
                       DynamicArray<Transaction>& card,
                       DynamicArray<Transaction>& ach,
@@ -140,7 +141,7 @@ void loadTransactions(const string& filename,
     }
 
     string line;
-    getline(file, line); // skip header
+    getline(file, line); 
     int count = 0;
 
     while (getline(file, line)) {
@@ -182,6 +183,21 @@ void loadTransactions(const string& filename,
     file.close();
 }
 
+// Show performance metrics
+void showPerformanceMetrics(const string& operation, long long timeMs, double memoryMB, size_t spaceUsed) {
+    cout << "\n+------------------------------- PERFORMANCE METRICS -------------------------------+" << endl;
+    cout << "| Operation         | " << setw(60) << left << operation << "|\n";
+    cout << "|-------------------+--------------------------------------------------------------|" << endl;
+    cout << "| Execution Time    | " << setw(60) << left << (to_string(timeMs) + " ms") << "|\n";
+    cout << "| Memory Usage      | " << setw(60) << left << (to_string(memoryMB) + " MB") << "|\n";
+    cout << "| Space Used        | " << setw(60) << left << (to_string(spaceUsed) + " bytes") << "|\n";
+    cout << "+----------------------------------------------------------------------------------+" << endl;
+    cout << "Press Enter to exit: ";
+    cin.ignore();
+    cin.get(); // Wait for Enter
+    exit(0);   // Exit program immediately
+}
+
 // Menu selection
 DynamicArray<Transaction>* selectChannel(DynamicArray<Transaction>& card,
                                           DynamicArray<Transaction>& ach,
@@ -203,9 +219,8 @@ DynamicArray<Transaction>* selectChannel(DynamicArray<Transaction>& card,
     }
 }
 
-// Main function with runtime tracking
+// Main function
 int main() {
-
     srand(time(0));
     DynamicArray<Transaction> cardTransactions;
     DynamicArray<Transaction> achTransactions;
@@ -245,20 +260,26 @@ int main() {
                     auto endSort = high_resolution_clock::now();
                     displayTransactions("Sorted " + channelName + " Transactions", *selected);
                     auto sortDuration = duration_cast<milliseconds>(endSort - startSort);
-                    cout << "Sorting completed in " << sortDuration.count() << " ms.\n";
+
+                    size_t spaceUsed = selected->size() * sizeof(Transaction);
+                    double memoryMB = spaceUsed / (1024.0 * 1024.0);
+                    showPerformanceMetrics("Search Transactions", sortDuration.count(), memoryMB, spaceUsed);
                 } else {
                     cout << "No transactions in this channel to sort.\n";
                 }
                 break;
+
             case 2:
                 selected = selectChannel(cardTransactions, achTransactions, upiTransactions, bankTransferTransactions, channelName);
                 if (selected) {
                     displayTransactions(channelName + " Transactions (Unsorted)", *selected);
                 }
                 break;
+
             case 3:
                 cout << "Exiting program. Goodbye!\n";
                 break;
+
             default:
                 cout << "Invalid choice.\n";
         }
