@@ -41,6 +41,16 @@ struct Node
     }
 };
 
+struct ChannelLists
+{
+    Node *card;
+    Node *ach;
+    Node *wire_transfer;
+    Node *upi;
+
+    ChannelLists() : card(nullptr), ach(nullptr), wire_transfer(nullptr), upi(nullptr) {}
+};
+
 // Insert at head
 void insert(Node *&head, Transaction t)
 {
@@ -101,17 +111,20 @@ Node *findMiddle(Node *head)
     return slow;
 }
 
-// Merge function to merge two sorted linked lists
+// Add new merge function for location sorting
 Node *merge(Node *left, Node *right)
 {
-    // Create a dummy node to simplify merging
+    if (!left)
+        return right;
+    if (!right)
+        return left;
+
     Node *dummy = new Node(Transaction());
     Node *tail = dummy;
 
-    // Merge the two lists by comparing transaction amounts
     while (left != nullptr && right != nullptr)
     {
-        if (left->data.amount <= right->data.amount)
+        if (left->data.location <= right->data.location)
         {
             tail->next = left;
             left = left->next;
@@ -124,38 +137,34 @@ Node *merge(Node *left, Node *right)
         tail = tail->next;
     }
 
-    // Append remaining nodes
     if (left != nullptr)
         tail->next = left;
     else
         tail->next = right;
 
-    // Get the merged list (skip dummy node)
     Node *result = dummy->next;
     delete dummy;
     return result;
 }
 
-// Main merge sort function
-Node *mergeSort(Node *head)
+// Add new merge sort function for location
+Node *mergeSortByLocation(Node *head)
 {
-    // Base case: if list is empty or has only one node
     if (head == nullptr || head->next == nullptr)
         return head;
 
-    // Find the middle and split the list
     Node *middle = findMiddle(head);
+    Node *right = middle->next;
+    middle->next = nullptr;
 
-    // Recursively sort both halves
-    Node *left = mergeSort(head);
-    Node *right = mergeSort(middle);
+    Node *left = mergeSortByLocation(head);
+    right = mergeSortByLocation(right);
 
-    // Merge the sorted halves
     return merge(left, right);
 }
 
 // Read CSV and insert into linked list
-void readCSV(string filename, Node *&head)
+void readCSV(string filename, ChannelLists &channels)
 {
     ifstream file(filename);
     if (!file.is_open())
@@ -201,10 +210,45 @@ void readCSV(string filename, Node *&head)
         getline(ss, t.ip_address, ',');
         getline(ss, t.device_hash, ',');
 
-        insert(head, t);
+        // Insert into appropriate channel list
+        if (t.payement_channel == "card")
+            insert(channels.card, t);
+        else if (t.payement_channel == "ACH")
+            insert(channels.ach, t);
+        else if (t.payement_channel == "wire_transfer")
+            insert(channels.wire_transfer, t);
+        else if (t.payement_channel == "UPI")
+            insert(channels.upi, t);
     }
-
     file.close();
+}
+
+Node *selectPaymentChannel(ChannelLists &channels)
+{
+    cout << "\nSelect Payment Channel:" << endl;
+    cout << "1. Card" << endl;
+    cout << "2. ACH" << endl;
+    cout << "3. Wire Transfer" << endl;
+    cout << "4. UPI" << endl;
+    cout << "Choice: ";
+
+    int choice;
+    cin >> choice;
+    cin.ignore();
+
+    switch (choice)
+    {
+    case 1:
+        return channels.card;
+    case 2:
+        return channels.ach;
+    case 3:
+        return channels.wire_transfer;
+    case 4:
+        return channels.upi;
+    default:
+        return nullptr;
+    }
 }
 
 size_t calculateMemoryUsage(Node *head)
@@ -235,14 +279,14 @@ void showPerformanceMetrics(const string &operation, long long timeMs, double me
 
 int main()
 {
-    Node *head = nullptr;
-    readCSV("financial_fraud_detection_dataset.csv", head);
+    ChannelLists channels;
+    readCSV("financial_fraud_detection_dataset.csv", channels);
 
     while (true)
     {
         cout << "\n+------------------- MENU -------------------+" << endl;
         cout << "| 1. Search by Transaction Type             |" << endl;
-        cout << "| 2. Sort Transactions by Amount            |" << endl;
+        cout << "| 2. Sort Transactions by Location            |" << endl;
         cout << "| 0. Exit                                   |" << endl;
         cout << "+-------------------------------------------+" << endl;
         cout << "Enter your choice: ";
@@ -256,7 +300,15 @@ int main()
             cout << "Exiting program." << endl;
             return 0;
         }
-        else if (choice == 1)
+
+        Node *selectedChannel = selectPaymentChannel(channels);
+        if (!selectedChannel)
+        {
+            cout << "Invalid channel selection!" << endl;
+            continue;
+        }
+
+        if (choice == 1)
         {
             // // ------ Sohaib ------
             string type;
@@ -266,13 +318,13 @@ int main()
             // timer//
             auto start = chrono::high_resolution_clock::now();
 
-            searchByTransactionType(head, type);
+            searchByTransactionType(selectedChannel, type);
 
             // timer//
             auto end = chrono::high_resolution_clock::now();
             auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
 
-            size_t memoryUsed = calculateMemoryUsage(head);
+            size_t memoryUsed = calculateMemoryUsage(selectedChannel);
             double memoryMB = static_cast<double>(memoryUsed) / (1024 * 1024);
 
             showPerformanceMetrics("Search", duration.count(), memoryMB, memoryUsed);
@@ -280,18 +332,23 @@ int main()
         }
         else if (choice == 2)
         {
-            // ------ Mahmood ------
             auto start = chrono::high_resolution_clock::now();
-            head = mergeSort(head);
-            auto end = chrono::high_resolution_clock::now();
 
-            // Calculate metrics
+            if (selectedChannel == channels.card)
+                channels.card = mergeSortByLocation(selectedChannel);
+            else if (selectedChannel == channels.ach)
+                channels.ach = mergeSortByLocation(selectedChannel);
+            else if (selectedChannel == channels.wire_transfer)
+                channels.wire_transfer = mergeSortByLocation(selectedChannel);
+            else if (selectedChannel == channels.upi)
+                channels.upi = mergeSortByLocation(selectedChannel);
+
+            auto end = chrono::high_resolution_clock::now();
             auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
-            size_t memoryUsed = calculateMemoryUsage(head);
+            size_t memoryUsed = calculateMemoryUsage(selectedChannel);
             double memoryMB = static_cast<double>(memoryUsed) / (1024 * 1024);
 
-            showPerformanceMetrics("Merge Sort", duration.count(), memoryMB, memoryUsed);
-            // ------------------------
+            showPerformanceMetrics("Location Sort", duration.count(), memoryMB, memoryUsed);
         }
     }
 }
