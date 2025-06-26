@@ -3,9 +3,11 @@
 #include <sstream>
 #include <string>
 #include <chrono>
-#include <iomanip> // Add this for setw
+#include <iomanip>  // setw for styling
+#include "json.hpp" // to export results in JSON
 
 using namespace std;
+using json = nlohmann::json;
 
 struct Transaction
 {
@@ -88,30 +90,30 @@ void searchByTransactionType(Node *head, string type)
 }
 
 // Mahmood
-// Helper function to find the middle of the linked list
+// helper function to find the middle of the linked list
 Node *findMiddle(Node *head)
 {
     if (head == nullptr || head->next == nullptr)
         return head;
 
-    Node *slow = head;
-    Node *fast = head;
+    Node *low = head;
+    Node *high = head;
     Node *prev = nullptr;
 
     // Use two pointers to find middle
-    while (fast != nullptr && fast->next != nullptr)
+    while (high != nullptr && high->next != nullptr)
     {
-        prev = slow;
-        slow = slow->next;
-        fast = fast->next->next;
+        prev = low;
+        low = low->next;
+        high = high->next->next;
     }
 
     // Split the list by breaking the connection
     prev->next = nullptr;
-    return slow;
+    return low;
 }
 
-// Add new merge function for location sorting
+// helper function to merge two sorted linked lists
 Node *merge(Node *left, Node *right)
 {
     if (!left)
@@ -147,7 +149,7 @@ Node *merge(Node *left, Node *right)
     return result;
 }
 
-// Add new merge sort function for location
+// Merge sort main function
 Node *mergeSortByLocation(Node *head)
 {
     if (head == nullptr || head->next == nullptr)
@@ -277,6 +279,61 @@ void showPerformanceMetrics(const string &operation, long long timeMs, double me
     return;
 }
 
+void exportSearchResultsToJson(Node *head, const string &type, long long timeMs, double memoryMB, size_t spaceUsed)
+{
+    json j;
+    j["operation"] = "search";
+    j["search_type"] = type;
+    j["execution_time_ms"] = timeMs;
+    j["memory_usage_mb"] = memoryMB;
+    j["space_used_bytes"] = spaceUsed;
+
+    json transactions = json::array();
+    Node *current = head;
+    while (current != nullptr)
+    {
+        if (current->data.transaction_type == type)
+        {
+            json transaction;
+            transaction["id"] = current->data.id;
+            transaction["amount"] = current->data.amount;
+            transaction["location"] = current->data.location;
+            transaction["is_fraud"] = current->data.is_fraud;
+            transaction["transaction_type"] = current->data.transaction_type;
+            transactions.push_back(transaction);
+        }
+        current = current->next;
+    }
+    j["matches"] = transactions;
+
+    std::ofstream file("search_results.json");
+    file << std::setw(4) << j << std::endl;
+}
+
+void exportSortResultsToJson(Node *head, long long timeMs, double memoryMB, size_t spaceUsed)
+{
+    json j;
+    j["operation"] = "location_sort";
+    j["execution_time_ms"] = timeMs;
+    j["memory_usage_mb"] = memoryMB;
+    j["space_used_bytes"] = spaceUsed;
+
+    json transactions = json::array();
+    Node *current = head;
+    while (current != nullptr)
+    {
+        json transaction;
+        transaction["id"] = current->data.id;
+        transaction["location"] = current->data.location;
+        transactions.push_back(transaction);
+        current = current->next;
+    }
+    j["sorted_transactions"] = transactions;
+
+    std::ofstream file("sort_results.json");
+    file << std::setw(4) << j << std::endl;
+}
+
 int main()
 {
     ChannelLists channels;
@@ -327,6 +384,9 @@ int main()
             size_t memoryUsed = calculateMemoryUsage(selectedChannel);
             double memoryMB = static_cast<double>(memoryUsed) / (1024 * 1024);
 
+            // Export as JSON
+            exportSearchResultsToJson(selectedChannel, type, duration.count(), memoryMB, memoryUsed);
+
             showPerformanceMetrics("Search", duration.count(), memoryMB, memoryUsed);
             // // ------------------------
         }
@@ -347,6 +407,9 @@ int main()
             auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
             size_t memoryUsed = calculateMemoryUsage(selectedChannel);
             double memoryMB = static_cast<double>(memoryUsed) / (1024 * 1024);
+
+            // Export as JSON
+            exportSortResultsToJson(selectedChannel, duration.count(), memoryMB, memoryUsed);
 
             showPerformanceMetrics("Location Sort", duration.count(), memoryMB, memoryUsed);
         }
