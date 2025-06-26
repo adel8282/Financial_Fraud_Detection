@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include <chrono>
+#include <iomanip> // Add this for setw
 
 using namespace std;
 
@@ -77,60 +78,79 @@ void searchByTransactionType(Node *head, string type)
 }
 
 // Mahmood
-// Helper function to find middle node
+// Helper function to find the middle of the linked list
 Node *findMiddle(Node *head)
 {
-    if (!head || !head->next)
+    if (head == nullptr || head->next == nullptr)
         return head;
 
-    Node *low = head, *high = head->next;
-    while (high && high->next)
+    Node *slow = head;
+    Node *fast = head;
+    Node *prev = nullptr;
+
+    // Use two pointers to find middle
+    while (fast != nullptr && fast->next != nullptr)
     {
-        low = low->next;
-        high = high->next->next;
+        prev = slow;
+        slow = slow->next;
+        fast = fast->next->next;
     }
-    return low;
+
+    // Split the list by breaking the connection
+    prev->next = nullptr;
+    return slow;
 }
 
-// Helper function to merge two sorted lists
+// Merge function to merge two sorted linked lists
 Node *merge(Node *left, Node *right)
 {
-    if (!left)
-        return right;
-    if (!right)
-        return left;
+    // Create a dummy node to simplify merging
+    Node *dummy = new Node(Transaction());
+    Node *tail = dummy;
 
-    Node *result = nullptr;
-    if (left->data.amount <= right->data.amount)
+    // Merge the two lists by comparing transaction amounts
+    while (left != nullptr && right != nullptr)
     {
-        result = left;
-        result->next = merge(left->next, right);
+        if (left->data.amount <= right->data.amount)
+        {
+            tail->next = left;
+            left = left->next;
+        }
+        else
+        {
+            tail->next = right;
+            right = right->next;
+        }
+        tail = tail->next;
     }
+
+    // Append remaining nodes
+    if (left != nullptr)
+        tail->next = left;
     else
-    {
-        result = right;
-        result->next = merge(left, right->next);
-    }
+        tail->next = right;
+
+    // Get the merged list (skip dummy node)
+    Node *result = dummy->next;
+    delete dummy;
     return result;
 }
 
-// Merge sort function
+// Main merge sort function
 Node *mergeSort(Node *head)
 {
-    // Base case
-    if (!head || !head->next)
+    // Base case: if list is empty or has only one node
+    if (head == nullptr || head->next == nullptr)
         return head;
 
-    // Find middle and split list
+    // Find the middle and split the list
     Node *middle = findMiddle(head);
-    Node *secondHalf = middle->next;
-    middle->next = nullptr;
 
     // Recursively sort both halves
     Node *left = mergeSort(head);
-    Node *right = mergeSort(secondHalf);
+    Node *right = mergeSort(middle);
 
-    // Merge sorted halves
+    // Merge the sorted halves
     return merge(left, right);
 }
 
@@ -187,34 +207,91 @@ void readCSV(string filename, Node *&head)
     file.close();
 }
 
+size_t calculateMemoryUsage(Node *head)
+{
+    size_t memory = 0;
+    Node *current = head;
+    while (current != nullptr)
+    {
+        memory += sizeof(Node) + sizeof(Transaction);
+        current = current->next;
+    }
+    return memory;
+}
+
+void showPerformanceMetrics(const string &operation, long long timeMs, double memoryMB, size_t spaceUsed)
+{
+    cout << "\n+------------------------------- PERFORMANCE METRICS -------------------------------+" << endl;
+    cout << "| Operation         | " << setw(60) << left << operation << "|\n";
+    cout << "|-------------------+--------------------------------------------------------------|" << endl;
+    cout << "| Execution Time    | " << setw(60) << left << (to_string(timeMs) + " ms") << "|\n";
+    cout << "| Memory Usage      | " << setw(60) << left << (to_string(memoryMB) + " MB") << "|\n";
+    cout << "| Space Used        | " << setw(60) << left << (to_string(spaceUsed) + " bytes") << "|\n";
+    cout << "+----------------------------------------------------------------------------------+" << endl;
+    cout << "Press Enter to exit: ";
+    cin.get(); // Wait for Enter
+    return;
+}
+
 int main()
 {
     Node *head = nullptr;
     readCSV("financial_fraud_detection_dataset.csv", head);
 
-    // // ------ Sohaib ------
-    // string type;
-    // cout << "Enter transaction type to search: ";
-    // getline(cin >> ws, type);
+    while (true)
+    {
+        cout << "\n+------------------- MENU -------------------+" << endl;
+        cout << "| 1. Search by Transaction Type             |" << endl;
+        cout << "| 2. Sort Transactions by Amount            |" << endl;
+        cout << "| 0. Exit                                   |" << endl;
+        cout << "+-------------------------------------------+" << endl;
+        cout << "Enter your choice: ";
 
-    // // timer//
-    // auto start = chrono::high_resolution_clock::now();
+        int choice;
+        cin >> choice;
 
-    // searchByTransactionType(head, type);
+        cin.ignore();
+        if (choice == 0)
+        {
+            cout << "Exiting program." << endl;
+            return 0;
+        }
+        else if (choice == 1)
+        {
+            // // ------ Sohaib ------
+            string type;
+            cout << "Enter transaction type to search: ";
+            getline(cin >> ws, type);
 
-    // // timer//
-    // auto end = chrono::high_resolution_clock::now();
-    // chrono::duration<double> duration = end - start;
+            // timer//
+            auto start = chrono::high_resolution_clock::now();
 
-    // cout << "\nTime taken for search: " << duration.count() << " seconds" << endl;
-    // // ------------------------
+            searchByTransactionType(head, type);
 
-    // ------ Mahmood ------
-    auto start = chrono::high_resolution_clock::now();
-    head = mergeSort(head);
-    auto end = chrono::high_resolution_clock::now();
+            // timer//
+            auto end = chrono::high_resolution_clock::now();
+            auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
 
-    chrono::duration<double> duration = end - start;
-    cout << "\nTime taken for merge sort: " << duration.count() << " seconds" << endl;
-    // ------------------------
+            size_t memoryUsed = calculateMemoryUsage(head);
+            double memoryMB = static_cast<double>(memoryUsed) / (1024 * 1024);
+
+            showPerformanceMetrics("Search", duration.count(), memoryMB, memoryUsed);
+            // // ------------------------
+        }
+        else if (choice == 2)
+        {
+            // ------ Mahmood ------
+            auto start = chrono::high_resolution_clock::now();
+            head = mergeSort(head);
+            auto end = chrono::high_resolution_clock::now();
+
+            // Calculate metrics
+            auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+            size_t memoryUsed = calculateMemoryUsage(head);
+            double memoryMB = static_cast<double>(memoryUsed) / (1024 * 1024);
+
+            showPerformanceMetrics("Merge Sort", duration.count(), memoryMB, memoryUsed);
+            // ------------------------
+        }
+    }
 }
