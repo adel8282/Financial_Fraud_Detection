@@ -277,7 +277,7 @@ namespace LinkedList {
 
 
 //==================================================================================
-// DYNAMIC ARRAY IMPLEMENTATION
+// ARRAY IMPLEMENTATION
 //==================================================================================
 
 namespace DynamicArray {
