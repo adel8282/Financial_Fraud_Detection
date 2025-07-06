@@ -9,40 +9,40 @@ STL is not used; all data structures are implemented manually.
 ## 📋 Features
 
 ### **Array - Adel (Search)**
-	- Search transactions by type using Linear Search.
-	- Separate arrays for each payment channel (Card, ACH, Wire Transfer, UPI).
-	- JSON export of matched results.
-	- Performance metrics: time, memory, space.
+- Search transactions by type using Linear Search.
+- Separate arrays for each payment channel (Card, ACH, Wire Transfer, UPI).
+- JSON export of matched results.
+- Performance metrics: time, memory, space.
 
 ---
 
 ### **Array - Suhana (Sort)**
-	- Sort transactions by location using Merge Sort.
-	- Sorting is done per payment channel.
-	- JSON export of sorted data.
-	- Performance metrics: time, memory, space.
+- Sort transactions by location using Merge Sort.
+- Sorting is done per payment channel.
+- JSON export of sorted data.
+- Performance metrics: time, memory, space.
 
 ---
 
 ### **Linked List - Sohaib (Search)**
-	- Search transactions by type using Linear Search.
-	- Linked lists created for each payment channel.
-	- JSON export of matched results.
-	- Performance metrics: time, memory, space.
+- Search transactions by type using Linear Search.
+- Linked lists created for each payment channel.
+- JSON export of matched results.
+- Performance metrics: time, memory, space.
 
 ---
 
 ### **Linked List - Mahmood (Sort)**
-	- Sort transactions by location using Merge Sort.
-	- Sorting is done on linked list nodes.
-	- JSON export of sorted data.
-	- Performance metrics: time, memory, space.
+- Sort transactions by location using Merge Sort.
+- Sorting is done on linked list nodes.
+- JSON export of sorted data.
+- Performance metrics: time, memory, space.
 
  ## 🧾 CSV Fields Used (18 Total)
-	- transaction_id, timestamp, sender_account, reciver_amount, amount
-	- transaction_type, merchant_category, location, device_used
-	- is_fraud, fraud_type, time_since_last_transaction, spending_deviation_score
-	- velocity_score, geo_anomaly_score, payement_channel, ip_address, device_hash
+- transaction_id, timestamp, sender_account, reciver_amount, amount
+- transaction_type, merchant_category, location, device_used
+- is_fraud, fraud_type, time_since_last_transaction, spending_deviation_score
+- velocity_score, geo_anomaly_score, payement_channel, ip_address, device_hash
 
  ## 📂 JSON Output Files
 	- search_results_array.json
