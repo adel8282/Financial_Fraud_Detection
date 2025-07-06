@@ -3,7 +3,9 @@
 #include <sstream>
 #include <string>
 #include <chrono>
-#include <iomanip>  // For setw for styling
+#include <iomanip>  
+#include <limits>   
+
 #include "json.hpp" // To export results in JSON
 
 using namespace std;
@@ -145,7 +147,7 @@ namespace LinkedList {
         ifstream file(filename);
         if (!file.is_open())
         {
-            cout << "Error opening file!" << endl;
+            cout << "Error: Could not open file " << filename << endl;
             return;
         }
         string line;
@@ -195,7 +197,10 @@ namespace LinkedList {
         Node *current = head;
         while (current != nullptr)
         {
-            memory += sizeof(Node) + sizeof(Transaction);
+            memory += sizeof(Node); // Memory for the node pointer itself
+            // Note: sizeof(Transaction) doesn't account for dynamic string data.
+            // This is a simplified calculation.
+            memory += sizeof(Transaction);
             current = current->next;
         }
         return memory;
@@ -281,7 +286,7 @@ namespace LinkedList {
 //==================================================================================
 
 namespace DynamicArray {
-    // Structure to manage a dynamic array of Transactions
+
     struct TransactionArray
     {
         Transaction *data;
@@ -370,7 +375,7 @@ namespace DynamicArray {
     {
         ifstream file(filename);
         if (!file.is_open()) {
-            cout << "Error opening file!" << endl;
+            cout << "Error: Could not open file " << filename << endl;
             return;
         }
         string line;
@@ -413,12 +418,9 @@ namespace DynamicArray {
         file.close();
     }
     
-    // Calculate memory usage for an array
+    // Calculate memory usage for an array based on its size
     size_t calculateMemoryUsage(const TransactionArray &arr)
     {
-        // UPDATED: Calculate based on the actual number of elements (size)
-        // rather than the total allocated memory (capacity). This gives a more
-        // intuitive measure of the memory being used by the data itself.
         return static_cast<size_t>(arr.size) * sizeof(Transaction);
     }
     
@@ -485,6 +487,22 @@ namespace DynamicArray {
 }
 
 // --- SHARED UTILITY FUNCTIONS ---
+
+// NEW: Robust function to get integer input from the user
+int getIntegerInput() {
+    int choice;
+    string input;
+    while (true) {
+        getline(cin, input);
+        stringstream ss(input);
+        if (ss >> choice && ss.eof()) { // Check if it's a valid integer and nothing else follows
+            break;
+        }
+        cout << "Invalid input. Please enter a number: ";
+    }
+    return choice;
+}
+
 void showPerformanceMetrics(const string &operation, long long timeMs, double memoryMB, size_t spaceUsed)
 {
     cout << "\n+------------------------------- PERFORMANCE METRICS -------------------------------+" << endl;
@@ -495,7 +513,6 @@ void showPerformanceMetrics(const string &operation, long long timeMs, double me
     cout << "| Space Used        | " << setw(60) << left << (to_string(spaceUsed) + " bytes") << "|\n";
     cout << "+----------------------------------------------------------------------------------+" << endl;
     cout << "Press Enter to continue...";
-    cin.ignore(); // Clears the buffer
     cin.get();    // Waits for Enter key
 }
 
@@ -512,55 +529,56 @@ void runLinkedListImplementation() {
         cout << "2. Sort Transactions by Location" << endl;
         cout << "0. Back to Main Menu" << endl;
         cout << "Enter your choice: ";
-        int choice;
-        cin >> choice;
-        cin.ignore();
+        int choice = getIntegerInput();
         
         if (choice == 0) break;
         
-        cout << "\nSelect Payment Channel:\n1. Card\n2. ACH\n3. Wire Transfer\n4. UPI\nChoice: ";
-        int channelChoice;
-        cin >> channelChoice;
-        cin.ignore();
+        // This block will only execute for valid menu options (1 or 2)
+        if (choice == 1 || choice == 2) {
+            cout << "\nSelect Payment Channel:\n1. Card\n2. ACH\n3. Wire Transfer\n4. UPI\nChoice: ";
+            int channelChoice = getIntegerInput();
 
-        LinkedList::Node* selectedChannel = nullptr;
-        switch (channelChoice) {
-            case 1: selectedChannel = channels.card; break;
-            case 2: selectedChannel = channels.ach; break;
-            case 3: selectedChannel = channels.wire_transfer; break;
-            case 4: selectedChannel = channels.upi; break;
-            default: cout << "Invalid channel!" << endl; continue;
-        }
-        
-        if (!selectedChannel) {
-            cout << "Channel is empty or invalid!" << endl;
-            continue;
-        }
+            LinkedList::Node* selectedChannel = nullptr;
+            switch (channelChoice) {
+                case 1: selectedChannel = channels.card; break;
+                case 2: selectedChannel = channels.ach; break;
+                case 3: selectedChannel = channels.wire_transfer; break;
+                case 4: selectedChannel = channels.upi; break;
+                default: cout << "Invalid channel selection! Returning to menu." << endl; continue;
+            }
+            
+            if (!selectedChannel) {
+                cout << "Channel is empty or invalid!" << endl;
+                continue;
+            }
 
-        if (choice == 1) {
-            cout << "Enter transaction type to search: ";
-            string type;
-            getline(cin, type);
-            auto start = chrono::high_resolution_clock::now();
-            LinkedList::searchByTransactionType(selectedChannel, type);
-            auto end = chrono::high_resolution_clock::now();
-            auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
-            size_t mem = LinkedList::calculateMemoryUsage(selectedChannel);
-            double memMB = static_cast<double>(mem) / (1024 * 1024);
-            LinkedList::exportSearchResultsToJson(selectedChannel, type, duration.count(), memMB, mem);
-            showPerformanceMetrics("Search (Linked List)", duration.count(), memMB, mem);
-        } else if (choice == 2) {
-            auto start = chrono::high_resolution_clock::now();
-            if (channelChoice == 1) channels.card = LinkedList::mergeSortByLocation(selectedChannel);
-            else if (channelChoice == 2) channels.ach = LinkedList::mergeSortByLocation(selectedChannel);
-            else if (channelChoice == 3) channels.wire_transfer = LinkedList::mergeSortByLocation(selectedChannel);
-            else if (channelChoice == 4) channels.upi = LinkedList::mergeSortByLocation(selectedChannel);
-            auto end = chrono::high_resolution_clock::now();
-            auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
-            size_t mem = LinkedList::calculateMemoryUsage(selectedChannel);
-            double memMB = static_cast<double>(mem) / (1024 * 1024);
-            LinkedList::exportSortResultsToJson(selectedChannel, duration.count(), memMB, mem);
-            showPerformanceMetrics("Sort (Linked List)", duration.count(), memMB, mem);
+            if (choice == 1) {
+                cout << "Enter transaction type to search: ";
+                string type;
+                getline(cin, type);
+                auto start = chrono::high_resolution_clock::now();
+                LinkedList::searchByTransactionType(selectedChannel, type);
+                auto end = chrono::high_resolution_clock::now();
+                auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+                size_t mem = LinkedList::calculateMemoryUsage(selectedChannel);
+                double memMB = static_cast<double>(mem) / (1024 * 1024);
+                LinkedList::exportSearchResultsToJson(selectedChannel, type, duration.count(), memMB, mem);
+                showPerformanceMetrics("Search (Linked List)", duration.count(), memMB, mem);
+            } else if (choice == 2) {
+                auto start = chrono::high_resolution_clock::now();
+                if (channelChoice == 1) channels.card = LinkedList::mergeSortByLocation(selectedChannel);
+                else if (channelChoice == 2) channels.ach = LinkedList::mergeSortByLocation(selectedChannel);
+                else if (channelChoice == 3) channels.wire_transfer = LinkedList::mergeSortByLocation(selectedChannel);
+                else if (channelChoice == 4) channels.upi = LinkedList::mergeSortByLocation(selectedChannel);
+                auto end = chrono::high_resolution_clock::now();
+                auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+                size_t mem = LinkedList::calculateMemoryUsage(selectedChannel);
+                double memMB = static_cast<double>(mem) / (1024 * 1024);
+                LinkedList::exportSortResultsToJson(selectedChannel, duration.count(), memMB, mem);
+                showPerformanceMetrics("Sort (Linked List)", duration.count(), memMB, mem);
+            }
+        } else {
+            cout << "Invalid choice. Please try again." << endl;
         }
     }
     LinkedList::cleanup(channels);
@@ -568,7 +586,7 @@ void runLinkedListImplementation() {
 
 void runArrayImplementation() {
     DynamicArray::ChannelArrays channels;
-    cout << "Loading data into Dynamic Arrays..." << endl;
+    cout << "Loading data into Arrays..." << endl;
     DynamicArray::readCSV("financial_fraud_detection_dataset.csv", channels);
 
     while (true) {
@@ -577,52 +595,52 @@ void runArrayImplementation() {
         cout << "2. Sort Transactions by Location" << endl;
         cout << "0. Back to Main Menu" << endl;
         cout << "Enter your choice: ";
-        int choice;
-        cin >> choice;
-        cin.ignore();
+        int choice = getIntegerInput();
         
         if (choice == 0) break;
-
-        cout << "\nSelect Payment Channel:\n1. Card\n2. ACH\n3. Wire Transfer\n4. UPI\nChoice: ";
-        int channelChoice;
-        cin >> channelChoice;
-        cin.ignore();
         
-        DynamicArray::TransactionArray* selectedChannel = nullptr;
-        switch(channelChoice) {
-            case 1: selectedChannel = &channels.card; break;
-            case 2: selectedChannel = &channels.ach; break;
-            case 3: selectedChannel = &channels.wire_transfer; break;
-            case 4: selectedChannel = &channels.upi; break;
-            default: cout << "Invalid channel!" << endl; continue;
-        }
+        if (choice == 1 || choice == 2) {
+            cout << "\nSelect Payment Channel:\n1. Card\n2. ACH\n3. Wire Transfer\n4. UPI\nChoice: ";
+            int channelChoice = getIntegerInput();
+            
+            DynamicArray::TransactionArray* selectedChannel = nullptr;
+            switch(channelChoice) {
+                case 1: selectedChannel = &channels.card; break;
+                case 2: selectedChannel = &channels.ach; break;
+                case 3: selectedChannel = &channels.wire_transfer; break;
+                case 4: selectedChannel = &channels.upi; break;
+                default: cout << "Invalid channel selection! Returning to menu." << endl; continue;
+            }
 
-        if (!selectedChannel || selectedChannel->size == 0) {
-            cout << "Channel is empty or invalid!" << endl;
-            continue;
-        }
+            if (!selectedChannel || selectedChannel->size == 0) {
+                cout << "Channel is empty or invalid!" << endl;
+                continue;
+            }
 
-        if (choice == 1) {
-            cout << "Enter transaction type to search: ";
-            string type;
-            getline(cin, type);
-            auto start = chrono::high_resolution_clock::now();
-            DynamicArray::searchByTransactionType(*selectedChannel, type);
-            auto end = chrono::high_resolution_clock::now();
-            auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
-            size_t mem = DynamicArray::calculateMemoryUsage(*selectedChannel);
-            double memMB = static_cast<double>(mem) / (1024 * 1024);
-            DynamicArray::exportSearchResultsToJson(*selectedChannel, type, duration.count(), memMB, mem);
-            showPerformanceMetrics("Search (Array)", duration.count(), memMB, mem);
-        } else if (choice == 2) {
-            auto start = chrono::high_resolution_clock::now();
-            DynamicArray::mergeSortByLocation(selectedChannel->data, 0, selectedChannel->size - 1);
-            auto end = chrono::high_resolution_clock::now();
-            auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
-            size_t mem = DynamicArray::calculateMemoryUsage(*selectedChannel);
-            double memMB = static_cast<double>(mem) / (1024 * 1024);
-            DynamicArray::exportSortResultsToJson(*selectedChannel, duration.count(), memMB, mem);
-            showPerformanceMetrics("Sort (Array)", duration.count(), memMB, mem);
+            if (choice == 1) {
+                cout << "Enter transaction type to search: ";
+                string type;
+                getline(cin, type);
+                auto start = chrono::high_resolution_clock::now();
+                DynamicArray::searchByTransactionType(*selectedChannel, type);
+                auto end = chrono::high_resolution_clock::now();
+                auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+                size_t mem = DynamicArray::calculateMemoryUsage(*selectedChannel);
+                double memMB = static_cast<double>(mem) / (1024 * 1024);
+                DynamicArray::exportSearchResultsToJson(*selectedChannel, type, duration.count(), memMB, mem);
+                showPerformanceMetrics("Search (Array)", duration.count(), memMB, mem);
+            } else if (choice == 2) {
+                auto start = chrono::high_resolution_clock::now();
+                DynamicArray::mergeSortByLocation(selectedChannel->data, 0, selectedChannel->size - 1);
+                auto end = chrono::high_resolution_clock::now();
+                auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+                size_t mem = DynamicArray::calculateMemoryUsage(*selectedChannel);
+                double memMB = static_cast<double>(mem) / (1024 * 1024);
+                DynamicArray::exportSortResultsToJson(*selectedChannel, duration.count(), memMB, mem);
+                showPerformanceMetrics("Sort (Array)", duration.count(), memMB, mem);
+            }
+        } else {
+            cout << "Invalid choice. Please try again." << endl;
         }
     }
     DynamicArray::cleanup(channels);
@@ -633,7 +651,7 @@ int main()
 {
     while (true)
     {
-        cout << "\n+-------------------- MAIN MENU ----------------+" << endl;
+        cout << "\n+-------------------- MAIN MENU ------------------+" << endl;
         cout << "| Select the data structure to use:               |" << endl;
         cout << "| 1. Linked List Implementation                   |" << endl;
         cout << "| 2. Array Implementation                         |" << endl;
@@ -641,9 +659,7 @@ int main()
         cout << "+-------------------------------------------------+" << endl;
         cout << "Enter your choice: ";
 
-        int choice;
-        cin >> choice;
-        cin.ignore(); // Consume the newline character
+        int choice = getIntegerInput();
 
         switch (choice)
         {
