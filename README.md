@@ -1,83 +1,60 @@
-# Food Delivery & Management System  
+💸 Financial Fraud Detection System
 
-A comprehensive platform for managing food delivery, takeaway, and dine-in services. This system involves **Vendors**, **Customers**, **Delivery Couriers**, **Admins**, and **Managers** with unique functionalities and a defined **order status flow**.
+A C++-based system to detect and analyze fraudulent transactions using both Array and Linked List implementations. It allows users to search and sort transaction data, providing performance metrics like execution time, memory usage, and space usage.
 
-**Form Size for Menus Should Be 900x660**
+STL is not used; all data structures are implemented manually.
 
----
+⸻
 
-## 📋 Features  
+📋 Features
 
-### **Vendor - Osamah** 
-  - Create and manage menu items.   
-  - Accept/cancel orders.
-  - Generate delivery task after accepting a delivery order.
-  - Update order statuses.  
-  - View order history with filters (1M/6M/12M).  
-  - View revenue with filters (1M/6M/12M).  
-  - Read customer reviews.  
+Array - Adel (Search)
+	•	Search transactions by type using Linear Search.
+	•	Separate arrays for each payment channel (Card, ACH, Wire Transfer, UPI).
+	•	JSON export of matched results.
+	•	Performance metrics: time, memory, space.
 
----
+⸻
 
-### **Customer - Mohammed** 
-  - View menus of registered vendors.
-  - Add address.
-  - Place/cancel orders.   
-  - Check order statuses.  
-  - View order history with filters (1M/6M/12M).  
-  - Submit order reviews.  
-  - Send complaints.  
-  - View transaction history.
+Array - Suhana (Sort)
+	•	Sort transactions by location using Merge Sort.
+	•	Sorting is done per payment channel.
+	•	JSON export of sorted data.
+	•	Performance metrics: time, memory, space.
 
----
+⸻
 
-### **Delivery Courier - Mahmood**  
-  - View and accept/decline delivery tasks.  
-  - Update task statuses.  
-  - View task history.  
-  - Read customer reviews.  
-  - View earnings with filters (1M/6M/12M).  
+Linked List - Sohaib (Search)
+	•	Search transactions by type using Linear Search.
+	•	Linked lists created for each payment channel.
+	•	JSON export of matched results.
+	•	Performance metrics: time, memory, space.
 
----
+⸻
 
-### **Admin - Adel**  
-  - Register vendors, customers, and couriers.  
-  - Top-up customer balances with receipt generation and notification.  
+Linked List - Mahmood (Sort)
+	•	Sort transactions by location using Merge Sort.
+	•	Sorting is done on linked list nodes.
+	•	JSON export of sorted data.
+	•	Performance metrics: time, memory, space.
 
----
+ 🧾 CSV Fields Used (18 Total)
+	•	transaction_id, timestamp, sender_account, reciver_amount, amount
+	•	transaction_type, merchant_category, location, device_used
+	•	is_fraud, fraud_type, time_since_last_transaction, spending_deviation_score
+	•	velocity_score, geo_anomaly_score, payement_channel, ip_address, device_hash
 
-### **Manager - Sohaib**  
-  - View revenue reports for all vendors.  
-  - Review customer complaints.  
-  - Manage vendor menus by removing items.  
+ 📂 JSON Output Files
+	•	search_results_array.json
+	•	search_results_list.json
+	•	sort_results_array.json
+	•	sort_results_list.json
 
----
+Each includes: transaction details, search/sort type, execution time, memory, space usage.
 
-## 🛠️ Order Status Flow  
 
-### **1. Successful Delivery**  
-1. **Customer Orders:** `PENDING_VENDOR`  
-2. **Vendor Accepts:** `PENDING_COURIER`  
-3. **Courier Accepts:** `PREPARING`  
-4. **Vendor Hands Over:** `OUT_FOR_DELIVERY`  
-5. **Courier Delivers:** `DELIVERED`  
 
-### **2. Unsuccessful Delivery**  
-- **Case 1:** Vendor declines → `VENDOR_DECLINED`  
-- **Case 2:** No Couriers → `COURIER_DECLINED`  
-
-### **3. Successful Takeaway**  
-1. **Customer Orders:** `PENDING_VENDOR`  
-2. **Vendor Accepts:** `PREPARING`  
-3. **Food Ready:** `READY_FOR_PICKUP`
-4. **Order Picked Up:** `PICKED_UP`
-
-### **4. Successful Dine-in**  
-1. **Customer Orders:** `PENDING_VENDOR`  
-2. **Vendor Accepts:** `PREPARING`  
-3. **Food Served:** `ORDER_SERVED`  
-
-### **5. Unsuccessful Takeaway/Dine-in**  
-- Vendor declines → `VENDOR_DECLINED`  
-
----
+🛠️ Tech Summary
+	•	Language: C++
+	•	Concepts: Dynamic Memory, Manual Array & Linked List Handling, Merge Sort, Linear Search, Performance Profiling, JSON Export
+	•	Libraries: nlohmann/json
